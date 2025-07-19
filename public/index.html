@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Downloader - Download Videos from YouTube, Instagram & Facebook</title>
+    <meta name="description" content="Free online video downloader for YouTube, Instagram, and Facebook. Download videos in high quality (1080p+) instantly.">
+    <meta name="keywords" content="video downloader, youtube downloader, instagram downloader, facebook downloader, free video download">
+    
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#1E40AF',
+                        accent: '#60A5FA'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3B82F6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .video-preview {
+            transition: all 0.3s ease;
+        }
+        
+        .video-preview:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-6">
+        <div class="container mx-auto px-4">
+            <div class="text-center">
+                <h1 class="text-3xl md:text-4xl font-bold mb-2">
+                    <i class="fas fa-download mr-3"></i>Video Downloader
+                </h1>
+                <p class="text-lg opacity-90">Download videos from YouTube, Instagram & Facebook in HD quality</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Ad Space - Top (Google AdSense Placeholder) -->
+        <div class="mb-8">
+            <div class="bg-gray-200 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <p class="text-gray-500 text-sm">
+                    <i class="fas fa-ad mr-2"></i>Advertisement Space
+                    <br><span class="text-xs">Replace this div with Google AdSense code</span>
+                </p>
+                <!-- 
+                    GOOGLE ADSENSE CODE GOES HERE
+                    Replace this entire div with your AdSense ad unit
+                -->
+            </div>
+        </div>
+
+        <!-- Video Downloader Form -->
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-8">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-2">Paste Video URL</h2>
+                    <p class="text-gray-600">Supports YouTube, Instagram, Facebook and more</p>
+                </div>
+
+                <form id="videoForm" class="space-y-4">
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <div class="flex-1">
+                            <input 
+                                type="url" 
+                                id="videoUrl" 
+                                placeholder="https://www.youtube.com/watch?v=..." 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                                required
+                            >
+                        </div>
+                        <button 
+                            type="button" 
+                            id="previewBtn" 
+                            class="px-6 py-3 bg-accent text-white rounded-lg hover:bg-primary transition-colors font-medium"
+                        >
+                            <i class="fas fa-search mr-2"></i>Preview
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="hidden text-center py-8">
+                    <div class="loading-spinner mx-auto mb-4"></div>
+                    <p class="text-gray-600">Fetching video information...</p>
+                </div>
+
+                <!-- Video Preview -->
+                <div id="videoPreview" class="hidden mt-6">
+                    <div class="video-preview bg-gray-50 rounded-lg p-6 border">
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <div class="md:w-1/3">
+                                <img id="videoThumbnail" src="" alt="Video thumbnail" class="w-full rounded-lg shadow-md">
+                            </div>
+                            <div class="md:w-2/3">
+                                <h3 id="videoTitle" class="text-xl font-semibold text-gray-800 mb-3"></h3>
+                                <div class="space-y-2 text-sm text-gray-600 mb-4">
+                                    <p><i class="fas fa-user mr-2"></i>Channel: <span id="videoUploader"></span></p>
+                                    <p><i class="fas fa-clock mr-2"></i>Duration: <span id="videoDuration"></span></p>
+                                    <p><i class="fas fa-eye mr-2"></i>Views: <span id="videoViews"></span></p>
+                                </div>
+                                <button 
+                                    id="downloadBtn" 
+                                    class="w-full md:w-auto px-8 py-3 bg-primary text-white rounded-lg hover:bg-secondary transition-colors font-medium text-lg"
+                                >
+                                    <i class="fas fa-download mr-2"></i>Download Video (HD)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorMessage" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p class="text-red-600"><i class="fas fa-exclamation-triangle mr-2"></i><span id="errorText"></span></p>
+                </div>
+            </div>
+
+            <!-- Features Section -->
+            <div class="grid md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-lg p-6 text-center shadow-md">
+                    <div class="text-primary text-3xl mb-4">
+                        <i class="fas fa-hd-video"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-800 mb-2">HD Quality</h3>
+                    <p class="text-gray-600 text-sm">Download videos in the highest available quality up to 1080p</p>
+                </div>
+                <div class="bg-white rounded-lg p-6 text-center shadow-md">
+                    <div class="text-primary text-3xl mb-4">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-800 mb-2">Fast Download</h3>
+                    <p class="text-gray-600 text-sm">Lightning-fast downloads with our optimized servers</p>
+                </div>
+                <div class="bg-white rounded-lg p-6 text-center shadow-md">
+                    <div class="text-primary text-3xl mb-4">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-800 mb-2">Safe & Secure</h3>
+                    <p class="text-gray-600 text-sm">No registration required. Your privacy is protected</p>
+                </div>
+            </div>
+
+            <!-- Ad Space - Bottom (Google AdSense Placeholder) -->
+            <div class="mb-8">
+                <div class="bg-gray-200 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <p class="text-gray-500 text-sm">
+                        <i class="fas fa-ad mr-2"></i>Advertisement Space
+                        <br><span class="text-xs">Replace this div with Google AdSense code</span>
+                    </p>
+                    <!-- 
+                        GOOGLE ADSENSE CODE GOES HERE
+                        Replace this entire div with your AdSense ad unit
+                    -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- About Us Section -->
+    <section class="bg-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">About Us</h2>
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Our Mission</h3>
+                        <p class="text-gray-600 mb-4">
+                            We provide a free, fast, and reliable video downloading service that supports multiple platforms 
+                            including YouTube, Instagram, and Facebook. Our goal is to make video downloading simple and accessible to everyone.
+                        </p>
+                        <p class="text-gray-600">
+                            With our advanced technology, you can download videos in the highest quality available, 
+                            ensuring you get the best viewing experience offline.
+                        </p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Why Choose Us?</h3>
+                        <ul class="space-y-2 text-gray-600">
+                            <li><i class="fas fa-check text-primary mr-2"></i>No registration required</li>
+                            <li><i class="fas fa-check text-primary mr-2"></i>Unlimited downloads</li>
+                            <li><i class="fas fa-check text-primary mr-2"></i>Multiple platform support</li>
+                            <li><i class="fas fa-check text-primary mr-2"></i>High-quality video downloads</li>
+                            <li><i class="fas fa-check text-primary mr-2"></i>Fast and secure service</li>
+                            <li><i class="fas fa-check text-primary mr-2"></i>Mobile-friendly interface</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="bg-gray-50 py-12">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Frequently Asked Questions</h2>
+                <div class="space-y-6">
+                    <div class="bg-white rounded-lg p-6 shadow-md">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">What video platforms do you support?</h3>
+                        <p class="text-gray-600">We support YouTube, Instagram, Facebook, and many other popular video platforms. Simply paste the video URL and we'll handle the rest.</p>
+                    </div>
+                    <div class="bg-white rounded-lg p-6 shadow-md">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">What video quality can I download?</h3>
+                        <p class="text-gray-600">You can download videos in the highest quality available, including HD (1080p) and sometimes even higher resolutions, depending on the source video.</p>
+                    </div>
+                    <div class="bg-white rounded-lg p-6 shadow-md">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Is this service free?</h3>
+                        <p class="text-gray-600">Yes, our video downloader is completely free to use. There are no hidden fees or subscription requirements.</p>
+                    </div>
+                    <div class="bg-white rounded-lg p-6 shadow-md">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Do I need to install any software?</h3>
+                        <p class="text-gray-600">No installation required! Our service works entirely in your web browser. Just paste the URL and download.</p>
+                    </div>
+                    <div class="bg-white rounded-lg p-6 shadow-md">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Is it safe to use?</h3>
+                        <p class="text-gray-600">Absolutely! We don't store your videos or personal information. All downloads are processed securely and privately.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="text-center">
+                <p class="mb-4">&copy; 2024 Video Downloader. All rights reserved.</p>
+                <p class="text-gray-400 text-sm">
+                    Disclaimer: Please respect copyright laws and only download videos you have permission to download.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="js/app.js"></script>
+</body>
+</html>
+
