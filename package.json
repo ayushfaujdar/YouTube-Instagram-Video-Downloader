@@ -5,6 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "build": "pip3 install yt-dlp",
+    "vercel-build": "pip3 install yt-dlp --user",
     "dev": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
