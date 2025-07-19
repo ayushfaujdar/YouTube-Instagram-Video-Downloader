@@ -3,15 +3,19 @@ services:
     name: video-downloader
     env: node
     buildCommand: |
-      apt-get update -y
-      apt-get install -y python3-pip
-      pip3 install --user yt-dlp
+      sudo apt-get update -y
+      sudo apt-get install -y python3 python3-pip ffmpeg
+      python3 -m pip install --user --upgrade pip
+      python3 -m pip install --user yt-dlp
       npm install
     startCommand: node server.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: PATH
-        value: /opt/render/.local/bin:$PATH
-    healthCheckPath: /
-    autoDeploy: true 
+        value: /opt/render/.local/bin:/usr/local/bin:/usr/bin:$PATH
+      - key: PYTHONPATH
+        value: /opt/render/.local/lib/python3.9/site-packages
+    healthCheckPath: /health
+    autoDeploy: true
+    plan: free 

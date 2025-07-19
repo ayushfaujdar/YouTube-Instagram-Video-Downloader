@@ -9,56 +9,54 @@ const PORT = process.env.PORT || 3000;
 
 // Function to find yt-dlp in PATH
 function findYtDlp() {
+    // Log environment for debugging
+    console.log('Current PATH:', process.env.PATH);
+    console.log('Current PYTHONPATH:', process.env.PYTHONPATH);
+    console.log('Platform:', process.platform);
+    console.log('Node ENV:', process.env.NODE_ENV);
+
+    const possiblePaths = [
+        '/opt/render/.local/bin/yt-dlp',
+        '/usr/local/bin/yt-dlp',
+        '/usr/bin/yt-dlp',
+        path.join(process.env.HOME || '', '.local/bin/yt-dlp'),
+        'yt-dlp'
+    ];
+
+    // Log all possible paths
+    console.log('Checking these paths for yt-dlp:', possiblePaths);
+
+    // First try the direct command
     try {
-        // Check Render's user-installed binaries first
-        const renderPath = '/opt/render/.local/bin/yt-dlp';
-        if (fs.existsSync(renderPath)) {
-            return renderPath;
-        }
-
-        // Try to find yt-dlp in PATH
-        const ytdlpPath = execSync('which yt-dlp').toString().trim();
-        if (ytdlpPath) {
-            return ytdlpPath;
-        }
+        execSync('yt-dlp --version');
+        return 'yt-dlp';
     } catch (error) {
-        // If not found in PATH, try common locations
-        const commonPaths = [
-            '/usr/local/bin/yt-dlp',
-            '/usr/bin/yt-dlp',
-            '/opt/homebrew/bin/yt-dlp',
-            process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp',
-            path.join(process.env.HOME || '', '.local/bin/yt-dlp')
-        ];
+        console.log('yt-dlp not found in PATH, checking specific locations...');
+    }
 
-        for (const binPath of commonPaths) {
-            try {
-                if (fs.existsSync(binPath)) {
-                    return binPath;
-                }
-            } catch (e) {
-                continue;
+    // Then check specific paths
+    for (const ytdlpPath of possiblePaths) {
+        try {
+            if (fs.existsSync(ytdlpPath)) {
+                execSync(`${ytdlpPath} --version`);
+                console.log(`Found yt-dlp at: ${ytdlpPath}`);
+                return ytdlpPath;
             }
+        } catch (error) {
+            console.log(`Failed to use yt-dlp at ${ytdlpPath}:`, error.message);
         }
     }
 
-    // If yt-dlp is not found, try to install it
+    // If not found, try to install
+    console.log('yt-dlp not found, attempting installation...');
     try {
-        console.log('yt-dlp not found, attempting to install...');
-        if (process.env.NODE_ENV === 'production') {
-            // In production (Render), install using pip
-            execSync('pip3 install --user yt-dlp');
-            // Update PATH to include user bin directory
-            process.env.PATH = `/opt/render/.local/bin:${process.env.PATH}`;
-        } else if (process.platform === 'darwin') {
-            execSync('brew install yt-dlp');
-        } else {
-            execSync('pip3 install --user yt-dlp');
-        }
-        return findYtDlp(); // Try to find it again after installation
+        execSync('python3 -m pip install --user --upgrade yt-dlp');
+        console.log('yt-dlp installed successfully');
+        // Try to find it again after installation
+        return findYtDlp();
     } catch (error) {
         console.error('Failed to install yt-dlp:', error);
-        throw new Error('Could not find or install yt-dlp');
+        throw new Error('Could not install yt-dlp');
     }
 }
 
@@ -66,11 +64,10 @@ function findYtDlp() {
 let YT_DLP_PATH;
 try {
     YT_DLP_PATH = findYtDlp();
-    const ytdlpVersion = execSync(`${YT_DLP_PATH} --version`).toString().trim();
-    console.log('Found yt-dlp version:', ytdlpVersion, 'at:', YT_DLP_PATH);
+    const version = execSync(`${YT_DLP_PATH} --version`).toString().trim();
+    console.log(`Successfully found yt-dlp version ${version} at ${YT_DLP_PATH}`);
 } catch (error) {
-    console.error('Error: yt-dlp not found or not working properly');
-    console.error('Installation error:', error);
+    console.error('Critical error with yt-dlp:', error);
     process.exit(1);
 }
 
@@ -80,9 +77,28 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// Health check endpoint for Render
+// Health check endpoint
 app.get('/health', (req, res) => {
-    res.json({ status: 'healthy', ytdlp_path: YT_DLP_PATH });
+    try {
+        const version = execSync(`${YT_DLP_PATH} --version`).toString().trim();
+        res.json({
+            status: 'healthy',
+            ytdlp: {
+                path: YT_DLP_PATH,
+                version: version
+            },
+            env: {
+                node_env: process.env.NODE_ENV,
+                path: process.env.PATH,
+                pythonPath: process.env.PYTHONPATH
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'unhealthy',
+            error: error.message
+        });
+    }
 });
 
 // Error handling middleware
