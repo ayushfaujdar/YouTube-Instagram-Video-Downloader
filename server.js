@@ -8,7 +8,17 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Get yt-dlp path
-const YT_DLP_PATH = process.platform === 'win32' ? 'yt-dlp.exe' : '/usr/local/bin/yt-dlp';
+const YT_DLP_PATH = process.platform === 'win32' ? 'yt-dlp.exe' : '/usr/local/Cellar/yt-dlp/2025.6.30/libexec/bin/yt-dlp';
+
+// Verify yt-dlp installation at startup
+try {
+    const ytdlpVersion = require('child_process').execSync(`${YT_DLP_PATH} --version`).toString().trim();
+    console.log('yt-dlp version:', ytdlpVersion);
+} catch (error) {
+    console.error('Error: yt-dlp not found or not working properly');
+    console.error('Please install yt-dlp using: brew install yt-dlp');
+    process.exit(1);
+}
 
 // Middleware
 app.use(cors());
