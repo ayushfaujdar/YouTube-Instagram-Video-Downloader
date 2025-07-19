@@ -86,27 +86,37 @@ app.post('/api/download', async (req, res) => {
     }
 
     try {
-        // Use yt-dlp with optimized format selection for faster downloads
+        // Use yt-dlp with optimized settings for fastest possible download
         const ytdlp = spawn('yt-dlp', [
-            '--format', 'bv*[height<=720][ext=mp4]+ba[ext=m4a]/b[height<=720][ext=mp4]/best[height<=720]',
+            '--format', 'b[filesize<100M]/bv*[height<=720][filesize<50M]+ba[filesize<20M]/b[height<=720]/best[height<=720]',
+            '--throttled-rate', '100K', // Prevent throttling
+            '--buffer-size', '16K',
+            '--concurrent-fragments', '8', // Download multiple fragments at once
+            '--downloader', 'aria2c', // Use aria2c for faster downloads
+            '--external-downloader-args', 'aria2c:"-x 8 -s 8 -k 1M"', // aria2c settings for parallel downloads
+            '--no-check-certificates', // Skip HTTPS verification for speed
+            '--no-warnings',
             '--progress',
             '--newline',
             '--output', '-',
             url
         ]);
 
-        // Set headers for file download
+        // Set headers for file download with compression
         res.setHeader('Content-Type', 'video/mp4');
         res.setHeader('Content-Disposition', 'attachment; filename="video.mp4"');
+        res.setHeader('Content-Encoding', 'gzip');
 
-        // Pipe the video stream directly to the response
-        ytdlp.stdout.pipe(res);
+        // Create a gzip stream for compression
+        const gzip = require('zlib').createGzip();
+        
+        // Pipe the video stream through compression to the response
+        ytdlp.stdout.pipe(gzip).pipe(res);
 
         // Log progress for debugging
         ytdlp.stderr.on('data', (chunk) => {
             const progress = chunk.toString();
             console.log('Download progress:', progress);
-            // Only send error messages to client, not progress info
             if (!progress.includes('[download]')) {
                 console.error('yt-dlp stderr:', progress);
             }
