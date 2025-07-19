@@ -10,6 +10,12 @@ const PORT = process.env.PORT || 3000;
 // Function to find yt-dlp in PATH
 function findYtDlp() {
     try {
+        // Check Render's user-installed binaries first
+        const renderPath = '/opt/render/.local/bin/yt-dlp';
+        if (fs.existsSync(renderPath)) {
+            return renderPath;
+        }
+
         // Try to find yt-dlp in PATH
         const ytdlpPath = execSync('which yt-dlp').toString().trim();
         if (ytdlpPath) {
@@ -21,13 +27,14 @@ function findYtDlp() {
             '/usr/local/bin/yt-dlp',
             '/usr/bin/yt-dlp',
             '/opt/homebrew/bin/yt-dlp',
-            process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp'
+            process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp',
+            path.join(process.env.HOME || '', '.local/bin/yt-dlp')
         ];
 
-        for (const path of commonPaths) {
+        for (const binPath of commonPaths) {
             try {
-                if (fs.existsSync(path)) {
-                    return path;
+                if (fs.existsSync(binPath)) {
+                    return binPath;
                 }
             } catch (e) {
                 continue;
@@ -38,7 +45,12 @@ function findYtDlp() {
     // If yt-dlp is not found, try to install it
     try {
         console.log('yt-dlp not found, attempting to install...');
-        if (process.platform === 'darwin') {
+        if (process.env.NODE_ENV === 'production') {
+            // In production (Render), install using pip
+            execSync('pip3 install --user yt-dlp');
+            // Update PATH to include user bin directory
+            process.env.PATH = `/opt/render/.local/bin:${process.env.PATH}`;
+        } else if (process.platform === 'darwin') {
             execSync('brew install yt-dlp');
         } else {
             execSync('pip3 install --user yt-dlp');
@@ -58,7 +70,7 @@ try {
     console.log('Found yt-dlp version:', ytdlpVersion, 'at:', YT_DLP_PATH);
 } catch (error) {
     console.error('Error: yt-dlp not found or not working properly');
-    console.error('Please install yt-dlp manually using: pip3 install yt-dlp');
+    console.error('Installation error:', error);
     process.exit(1);
 }
 
@@ -67,6 +79,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+    res.json({ status: 'healthy', ytdlp_path: YT_DLP_PATH });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

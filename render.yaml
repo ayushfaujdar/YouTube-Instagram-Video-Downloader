@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: video-downloader
+    env: node
+    buildCommand: |
+      apt-get update -y
+      apt-get install -y python3-pip
+      pip3 install --user yt-dlp
+      npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PATH
+        value: /opt/render/.local/bin:$PATH
+    healthCheckPath: /
+    autoDeploy: true 
