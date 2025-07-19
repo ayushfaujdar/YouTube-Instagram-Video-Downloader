@@ -7,9 +7,8 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Performance monitoring
-const startTime = new Date();
-console.log(`Server started at: ${startTime}`);
+// Get yt-dlp path
+const YT_DLP_PATH = process.platform === 'win32' ? 'yt-dlp.exe' : '/usr/local/bin/yt-dlp';
 
 // Middleware
 app.use(cors());
@@ -17,28 +16,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// Keep yt-dlp warm (run every 5 minutes)
-function warmupYtdlp() {
-    const dummyUrl = 'https://www.youtube.com/watch?v=jNQXAC9IVRw'; // First YouTube video ever
-    const ytdlp = spawn('yt-dlp', ['--quiet', '--dump-json', '--no-warnings', dummyUrl]);
-    ytdlp.on('error', (error) => console.error('Warmup error:', error));
-}
-setInterval(warmupYtdlp, 5 * 60 * 1000); // Every 5 minutes
-warmupYtdlp(); // Initial warmup
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).json({ error: err.message || 'Internal server error' });
+});
 
 // Serve the main page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Serve the ad page
-app.get('/ad', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'ad.html'));
-});
-
 // API route to get video info
 app.post('/api/video-info', async (req, res) => {
-    console.time('video-info');
     const { url } = req.body;
     
     if (!url) {
@@ -46,8 +36,13 @@ app.post('/api/video-info', async (req, res) => {
     }
 
     try {
-        // Use yt-dlp with optimized settings for faster info fetching
-        const ytdlp = spawn('yt-dlp', [
+        // Check if yt-dlp exists
+        if (!fs.existsSync(YT_DLP_PATH)) {
+            throw new Error('yt-dlp not found. Please install it first.');
+        }
+
+        // Use yt-dlp with optimized settings
+        const ytdlp = spawn(YT_DLP_PATH, [
             '--quiet',
             '--dump-json',
             '--no-warnings',
@@ -67,14 +62,13 @@ app.post('/api/video-info', async (req, res) => {
         });
 
         ytdlp.on('close', (code) => {
-            console.timeEnd('video-info');
             if (code !== 0) {
                 console.error('yt-dlp error:', error);
-                return res.status(500).json({ error: 'Failed to fetch video information' });
+                return res.status(500).json({ error: 'Failed to fetch video information: ' + error });
             }
 
             try {
-                const videoInfo = JSON.parse(data);
+                const videoInfo = JSON.parse(data.trim());
                 res.json({
                     title: videoInfo.title,
                     thumbnail: videoInfo.thumbnail,
@@ -89,20 +83,24 @@ app.post('/api/video-info', async (req, res) => {
                     }))
                 });
             } catch (parseError) {
-                console.error('JSON parse error:', parseError);
+                console.error('JSON parse error:', parseError, 'Data:', data);
                 res.status(500).json({ error: 'Failed to parse video information' });
             }
         });
 
+        ytdlp.on('error', (spawnError) => {
+            console.error('Spawn error:', spawnError);
+            res.status(500).json({ error: 'Failed to start yt-dlp process' });
+        });
+
     } catch (error) {
         console.error('Error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: error.message || 'Internal server error' });
     }
 });
 
 // API route to download video
 app.post('/api/download', async (req, res) => {
-    console.time('video-download');
     const { url, format } = req.body;
     
     if (!url) {
@@ -110,40 +108,41 @@ app.post('/api/download', async (req, res) => {
     }
 
     try {
-        // Optimized yt-dlp settings for faster downloads
+        // Check if yt-dlp exists
+        if (!fs.existsSync(YT_DLP_PATH)) {
+            throw new Error('yt-dlp not found. Please install it first.');
+        }
+
+        // Optimized yt-dlp settings
         const ytdlpArgs = [
             '--quiet',
             '--no-warnings',
             '--no-check-certificates',
-            '--no-part', // Stream directly without temporary file
-            '--concurrent-fragments', '10', // Download multiple fragments at once
-            '--downloader', 'aria2c', // Use aria2c for faster downloads
-            '--external-downloader-args', 'aria2c:"-x 16 -s 16 -k 1M"' // aria2c settings
+            '--no-part',
+            '--concurrent-fragments', '10'
         ];
 
         // Add format selection
         if (format) {
             ytdlpArgs.push('-f', format);
         } else {
-            // Default to fast 720p download if no format specified
             ytdlpArgs.push('-f', 'bv*[height<=720][filesize<100M]+ba[filesize<20M]/b[height<=720]/best[height<=720]');
         }
 
-        // Add output template
         ytdlpArgs.push('-o', '-');
         ytdlpArgs.push(url);
 
-        const ytdlp = spawn('yt-dlp', ytdlpArgs);
+        const ytdlp = spawn(YT_DLP_PATH, ytdlpArgs);
 
-        // Set headers for file download with compression
+        // Set headers for file download
         res.setHeader('Content-Type', 'video/mp4');
         res.setHeader('Content-Disposition', 'attachment; filename="video.mp4"');
         res.setHeader('Transfer-Encoding', 'chunked');
 
-        // Stream the video directly to response
+        // Stream the video directly
         ytdlp.stdout.pipe(res);
 
-        // Handle progress and errors
+        // Handle errors
         ytdlp.stderr.on('data', (chunk) => {
             const progress = chunk.toString();
             if (!progress.includes('[download]')) {
@@ -152,12 +151,9 @@ app.post('/api/download', async (req, res) => {
         });
 
         ytdlp.on('close', (code) => {
-            console.timeEnd('video-download');
-            if (code !== 0) {
+            if (code !== 0 && !res.headersSent) {
                 console.error('yt-dlp process exited with code:', code);
-                if (!res.headersSent) {
-                    res.status(500).json({ error: 'Failed to download video' });
-                }
+                res.status(500).json({ error: 'Failed to download video' });
             }
         });
 
@@ -176,19 +172,9 @@ app.post('/api/download', async (req, res) => {
     } catch (error) {
         console.error('Error:', error);
         if (!res.headersSent) {
-            res.status(500).json({ error: 'Internal server error' });
+            res.status(500).json({ error: error.message || 'Internal server error' });
         }
     }
-});
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-    const uptime = (new Date() - startTime) / 1000;
-    res.json({
-        status: 'healthy',
-        uptime: `${uptime.toFixed(2)} seconds`,
-        startTime: startTime.toISOString()
-    });
 });
 
 // Start server

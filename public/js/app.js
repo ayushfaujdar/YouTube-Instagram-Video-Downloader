@@ -64,7 +64,6 @@ class VideoDownloader {
         this.hidePreview();
 
         try {
-            console.time('preview-fetch');
             const response = await fetch('/api/video-info', {
                 method: 'POST',
                 headers: {
@@ -74,10 +73,13 @@ class VideoDownloader {
             });
 
             const data = await response.json();
-            console.timeEnd('preview-fetch');
 
             if (!response.ok) {
                 throw new Error(data.error || 'Failed to fetch video information');
+            }
+
+            if (!data || !data.title) {
+                throw new Error('Invalid video information received');
             }
 
             this.currentVideoInfo = data;
