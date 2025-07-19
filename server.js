@@ -1,22 +1,64 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Get yt-dlp path
-const YT_DLP_PATH = process.platform === 'win32' ? 'yt-dlp.exe' : '/usr/local/Cellar/yt-dlp/2025.6.30/libexec/bin/yt-dlp';
+// Function to find yt-dlp in PATH
+function findYtDlp() {
+    try {
+        // Try to find yt-dlp in PATH
+        const ytdlpPath = execSync('which yt-dlp').toString().trim();
+        if (ytdlpPath) {
+            return ytdlpPath;
+        }
+    } catch (error) {
+        // If not found in PATH, try common locations
+        const commonPaths = [
+            '/usr/local/bin/yt-dlp',
+            '/usr/bin/yt-dlp',
+            '/opt/homebrew/bin/yt-dlp',
+            process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp'
+        ];
 
-// Verify yt-dlp installation at startup
+        for (const path of commonPaths) {
+            try {
+                if (fs.existsSync(path)) {
+                    return path;
+                }
+            } catch (e) {
+                continue;
+            }
+        }
+    }
+
+    // If yt-dlp is not found, try to install it
+    try {
+        console.log('yt-dlp not found, attempting to install...');
+        if (process.platform === 'darwin') {
+            execSync('brew install yt-dlp');
+        } else {
+            execSync('pip3 install --user yt-dlp');
+        }
+        return findYtDlp(); // Try to find it again after installation
+    } catch (error) {
+        console.error('Failed to install yt-dlp:', error);
+        throw new Error('Could not find or install yt-dlp');
+    }
+}
+
+// Get yt-dlp path
+let YT_DLP_PATH;
 try {
-    const ytdlpVersion = require('child_process').execSync(`${YT_DLP_PATH} --version`).toString().trim();
-    console.log('yt-dlp version:', ytdlpVersion);
+    YT_DLP_PATH = findYtDlp();
+    const ytdlpVersion = execSync(`${YT_DLP_PATH} --version`).toString().trim();
+    console.log('Found yt-dlp version:', ytdlpVersion, 'at:', YT_DLP_PATH);
 } catch (error) {
     console.error('Error: yt-dlp not found or not working properly');
-    console.error('Please install yt-dlp using: brew install yt-dlp');
+    console.error('Please install yt-dlp manually using: pip3 install yt-dlp');
     process.exit(1);
 }
 
