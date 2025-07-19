@@ -5,45 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Download Starting - Video Downloader</title>
     
-    <!-- TailwindCSS CDN -->
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9102705296868776" crossorigin="anonymous"></script>
+    
+    <!-- TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Custom Tailwind Config -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3B82F6',
-                        secondary: '#1E40AF',
-                        accent: '#60A5FA'
-                    }
-                }
-            }
-        }
-    </script>
-    
-    <!-- Font Awesome for icons -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-        
         .pulse-animation {
             animation: pulse 2s infinite;
         }
-        
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
-        
         .countdown {
-            font-size: 3rem;
+            font-size: 2rem;
             font-weight: bold;
-            color: #3B82F6;
+            color: #4B5563;
         }
     </style>
 </head>
@@ -73,6 +59,19 @@
                     Your video download should begin automatically. If it doesn't start, please return to the previous tab.
                 </p>
                 
+                <!-- Google AdSense Ad Unit -->
+                <div class="mb-6">
+                    <ins class="adsbygoogle"
+                         style="display:block"
+                         data-ad-client="ca-pub-9102705296868776"
+                         data-ad-slot="YOUR_AD_SLOT_ID"
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
+                    <script>
+                         (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
+                </div>
+                
                 <!-- Countdown Timer -->
                 <div class="mb-6">
                     <p class="text-gray-500 mb-2">This page will close in:</p>
@@ -83,78 +82,8 @@
                     <i class="fas fa-times mr-2"></i>Close This Tab
                 </button>
             </div>
-
-            <!-- Advertisement Space - Large Banner -->
-            <div class="mb-8">
-                <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-8 text-center">
-                    <h3 class="text-2xl font-bold mb-4">
-                        <i class="fas fa-ad mr-2"></i>Advertisement Space
-                    </h3>
-                    <p class="text-lg mb-4">This is where your affiliate links or interstitial ads would go</p>
-                    <div class="bg-white bg-opacity-20 rounded-lg p-6 mb-4">
-                        <p class="text-sm opacity-90">
-                            Replace this section with:
-                            <br>• Google AdSense ads
-                            <br>• Affiliate marketing links
-                            <br>• Sponsored content
-                            <br>• Product recommendations
-                        </p>
-                    </div>
-                    
-                    <!-- Example Affiliate Link Placeholder -->
-                    <a href="#" class="inline-block bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-external-link-alt mr-2"></i>Example Affiliate Link
-                    </a>
-                </div>
-            </div>
-
-            <!-- Additional Ad Spaces -->
-            <div class="grid md:grid-cols-2 gap-6 mb-8">
-                <div class="bg-gray-200 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <i class="fas fa-ad text-gray-400 text-3xl mb-3"></i>
-                    <p class="text-gray-500 text-sm">
-                        Ad Space 1
-                        <br><span class="text-xs">300x250 Banner</span>
-                    </p>
-                </div>
-                <div class="bg-gray-200 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <i class="fas fa-ad text-gray-400 text-3xl mb-3"></i>
-                    <p class="text-gray-500 text-sm">
-                        Ad Space 2
-                        <br><span class="text-xs">300x250 Banner</span>
-                    </p>
-                </div>
-            </div>
-
-            <!-- Monetization Tips -->
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
-                <h3 class="text-lg font-semibold text-yellow-800 mb-3">
-                    <i class="fas fa-lightbulb mr-2"></i>Monetization Tips
-                </h3>
-                <ul class="text-yellow-700 text-sm space-y-2">
-                    <li><i class="fas fa-check mr-2"></i>Replace ad placeholders with Google AdSense code</li>
-                    <li><i class="fas fa-check mr-2"></i>Add affiliate links for VPN services, video editing software</li>
-                    <li><i class="fas fa-check mr-2"></i>Include sponsored content related to video downloading</li>
-                    <li><i class="fas fa-check mr-2"></i>Consider adding a premium version with faster downloads</li>
-                    <li><i class="fas fa-check mr-2"></i>Use this interstitial page to maximize ad impressions</li>
-                </ul>
-            </div>
-
-            <!-- Return Link -->
-            <div class="text-center">
-                <a href="/" class="inline-block px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
-                    <i class="fas fa-arrow-left mr-2"></i>Return to Video Downloader
-                </a>
-            </div>
         </div>
     </main>
-
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-6 mt-12">
-        <div class="container mx-auto px-4 text-center">
-            <p>&copy; 2024 Video Downloader. All rights reserved.</p>
-        </div>
-    </footer>
 
     <script>
         // Countdown timer
@@ -167,17 +96,9 @@
             
             if (countdown <= 0) {
                 clearInterval(timer);
-                // Auto-close the tab after countdown
                 window.close();
             }
         }, 1000);
-        
-        // If window.close() doesn't work (some browsers block it), redirect back
-        setTimeout(() => {
-            if (!window.closed) {
-                window.location.href = '/';
-            }
-        }, 6000);
     </script>
 </body>
 </html>
