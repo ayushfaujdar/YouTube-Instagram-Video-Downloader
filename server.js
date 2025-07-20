@@ -77,6 +77,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
+// Serve ads.txt
+app.get('/ads.txt', (req, res) => {
+    res.setHeader('Content-Type', 'text/plain');
+    res.sendFile(path.join(__dirname, 'public', 'ads.txt'));
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
     try {
